@@ -1,0 +1,2 @@
+pyarrow>=14
+huggingface_hub[cli]>=0.23

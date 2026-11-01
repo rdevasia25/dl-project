@@ -1,0 +1,50 @@
+{
+  "hf_repo": "ZhiqiEliWang/conpact",
+  "wildchat": {
+    "histories": 50,
+    "instances": 750,
+    "user_turns_after_dedupe": 9779,
+    "duplicates_removed": 3082,
+    "non_english_turns": 161,
+    "keyword_hit_turns": 1874,
+    "turns_over_max_chars": 124
+  },
+  "hermes": {
+    "histories": 50,
+    "instances": 750,
+    "user_turns_after_dedupe": 94,
+    "duplicates_removed": 358,
+    "non_english_turns": 0,
+    "keyword_hit_turns": 2,
+    "turns_over_max_chars": 0
+  },
+  "cross_split_duplicates_removed": 0,
+  "swe_natural": {
+    "rows": 126,
+    "val": 38,
+    "test": 88
+  },
+  "labeled_set": {
+    "val": {
+      "keyword_flagged_turn": 25,
+      "injected_sc": 20,
+      "random_turn": 50,
+      "natural_sc_swe": 5
+    },
+    "test": {
+      "keyword_flagged_turn": 50,
+      "random_turn": 100,
+      "injected_sc": 40,
+      "natural_sc_swe": 10
+    }
+  },
+  "needs_human_label": 225,
+  "second_pass_items": 60,
+  "stream": {
+    "histories": 10,
+    "turns": 3277,
+    "injections": 100,
+    "keyword_flagged_to_check": 319
+  },
+  "warnings": []
+}
