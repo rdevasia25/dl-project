@@ -66,6 +66,6 @@ Judge persistence intent, not how forceful the wording is. "I'd prefer…" can b
 - **Preference**: which of several equally valid answers ("metric units", "arXiv papers")
 - **Output**: textual form of replies ("bullet points only", "numbers as words")
 
-## Optional: second labeler
+## Second labeler
 
-Skipped in the current release. If you want an agreement score later: label `to_label_second.csv` without opening `to_label.csv` or talking to the first labeler. After both are done, run `finalize_labels.py`. It reports agreement and Cohen's kappa and writes `disagreements.csv`. Discuss each disagreement, update the label in `to_label.csv`, add any new decision to the hard-cases section above, and re-run.
+Not done in this release, so no inter-annotator agreement is reported. The sampled turns were labeled once, by an LLM (Claude), following this guide.

@@ -28,7 +28,7 @@ Rules that keep the results valid:
 - Feed the gate and the extractor the same inputs (`user_message`, `previous_assistant_message`).
 - For the stream set, run the gate/extractor once on every turn in `stream_turns.jsonl`, plus once on each turn in `stream_injections.jsonl`, instead of re-running whole conversations.
 
-Rebuilding from scratch is only needed if the dataset must change: `bash run_all.sh` (details below).
+Rebuilding from scratch is only needed if the dataset must change: `python build_dataset.py` (details below).
 
 ## Why the released data needs this step
 
@@ -52,32 +52,19 @@ Rebuilding from scratch is only needed if the dataset must change: `bash run_all
 
 ## Run it
 
-**Quick path:** `bash run_all.sh` does every step below, including applying the labels already in `labels/`.
-
-**Step by step:**
+The whole pipeline is one script, `build_dataset.py`:
 
 ```bash
 pip install -r requirements.txt
-
-# 1. Download (the whole release is under 70 MB; the `haystacks` config is not needed)
-huggingface-cli download ZhiqiEliWang/conpact --repo-type dataset \
-    --include "wildchat/*" "hermes/*" "swe_natural/*" --local-dir data/conpact
-
-# 2. Build
-cd scripts
-python build_dataset.py --local_dir ../data/conpact --out_dir ../data/build
-
-# 3. Label (see LABELING_GUIDE.md)
-#    data/build/to_label.csv          all ~225 sampled turns
-#    data/build/to_label_second.csv   optional blind second pass (60 rows) for an agreement score
-#    data/build/stream_to_label.csv   keyword-flagged stream turns
-
-# 4. Finalize (re-run after fixing disagreements)
-python finalize_labels.py --build_dir ../data/build --out_dir ../data/final
-#    add --allow_unlabeled to produce a pilot set from a partly labeled sheet
+python build_dataset.py
 ```
 
-Every count can be changed by flag; run `python build_dataset.py --help`. The seed is fixed (42), so the same command gives the same dataset.
+1. Downloads `wildchat`, `hermes` and `swe_natural` from Hugging Face into `data/conpact/` if they are not there yet (under 70 MB).
+2. Builds the labeled set and the stream set as described above.
+3. Reads the labels from `labels/to_label.csv` (225 sampled turns) and `labels/stream_to_label.csv` (319 keyword-flagged stream turns). If those files don't exist, it writes blank sheets there and stops so they can be labeled with `LABELING_GUIDE.md`.
+4. Writes `data/final/`, plus `data/build_summary.txt` and `data/final_summary.txt`.
+
+All settings (seed 42, split share, sample sizes, length limits) are constants at the top of the script. The seed is fixed, so a re-run gives exactly the same files, and the label sheets only apply to the build they were made from; the script stops if the row ids don't match.
 
 ## Outputs
 
@@ -123,4 +110,4 @@ Report this in the dataset section and in the AI-use appendix.
 
 ## Licensing
 
-Histories keep their source licenses (WildChat ODC-BY, Hermes Apache-2.0, SWE trajectories CC-BY-4.0). The constraints, probes and SWE-Natural annotations are MIT. The 15 constraints in `scripts/common.py` are copied from the paper's repo (MIT).
+Histories keep their source licenses (WildChat ODC-BY, Hermes Apache-2.0, SWE trajectories CC-BY-4.0). The constraints, probes and SWE-Natural annotations are MIT. The 15 constraints in `build_dataset.py` are copied from the paper's repo (MIT).
