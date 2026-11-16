@@ -227,6 +227,13 @@ def main():
     print(f"\nSaved {len(results)} rows to {out}")
     print(f"Total cost ${sum(x['cost_usd'] for x in results):.6f}, "
           f"mean latency {sum(x['latency_s'] for x in results) / len(results):.2f}s")
+    print("threshold  calls  TP  FP  FN  recall")
+    for t in THRESHOLDS:
+        tp = sum(x["jev_score"] >= t and x["is_persistent_constraint"] for x in results)
+        fp = sum(x["jev_score"] >= t and not x["is_persistent_constraint"] for x in results)
+        fn = sum(x["jev_score"] < t and x["is_persistent_constraint"] for x in results)
+        recall = tp / (tp + fn) if tp + fn else float("nan")
+        print(f"{t:>9}  {tp + fp:>5}  {tp:>2}  {fp:>2}  {fn:>2}  {recall:.2f}")
 
 
 if __name__ == "__main__":
