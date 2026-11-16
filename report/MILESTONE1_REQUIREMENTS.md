@@ -24,7 +24,7 @@ Also required: `sections/ownership.tex` (who owned what) and `sections/appendix_
 ## Contribution status — 2026-11-16
 
 - Rahul Devasia (rd668): item b drafted in sections/intro.tex; own author name,
-  NetID and email entered in main.tex. AI assistance recorded in appendix_ai.tex.
+  NetID and email entered in main.tex.
 - Teammates retain ownership of items c, d and e; those sections were not edited
   as part of Rahul's contribution. Shared title, remaining author placeholders,
   ownership and final assembly still need team review.
