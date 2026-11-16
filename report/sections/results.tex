@@ -1,3 +1,31 @@
 \section{Preliminary Results}
 \label{sec:results}
-% TODO (owner: ): tables and figures from results/eval/ (milestone item e).
+
+\subsection{Baseline}
+\label{sec:baseline-results}
+Wang et al.~\cite{wang2026compaction}, Table~4, report the Qwen3.5-9B
+extractor's registry-retention rates shown in Table~\ref{tab:published-baseline}.
+Retention measures whether an injected constraint is present in the final
+registry, as assessed by the paper's retention judge.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Qwen3.5-9B registry retention on the original benchmarks, as reported
+  by Wang et al.~\cite{wang2026compaction}, Table~4 (Ext. column).}
+  \label{tab:published-baseline}
+  \begin{tabular}{lr}
+    \toprule
+    Dataset & Retention (\%) \\
+    \midrule
+    WildChat & 90.3 \\
+    Hermes Agent & 93.7 \\
+    OpenResearcher & 95.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Our baseline implements the same per-user-turn extraction and append-only
+registry procedure. All 49 offline software tests pass, and small dataset runs
+with scripted model responses complete successfully.
+
+% Teammate-owned Jev preliminary results can be added below independently.
