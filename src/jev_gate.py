@@ -99,3 +99,45 @@ def load_api_key():
     if not key:
         raise RuntimeError(f"{KEY_NAME} is not set (environment or .env)")
     return key
+
+
+def build_request(user_message, previous_assistant_message=None):
+    """The exact payload sent to Jev. Logged with every result so any score can be rerun."""
+    state = {}
+    if previous_assistant_message:
+        state["previous_assistant_message"] = previous_assistant_message[-PREV_ASSISTANT_MAX_CHARS:]
+    state["user_message"] = user_message[:USER_MESSAGE_MAX_CHARS]
+    return {"model": MODEL, "state": state, "questions": QUESTIONS}
+
+
+def jev_score(user_message, previous_assistant_message=None, api_key=None, retries=3):
+    """Ask Jev once. Returns score, per-question probabilities, latency, tokens and cost.
+
+    A failed call raises an error; it is never silently treated as "no constraint".
+    """
+    api_key = api_key or load_api_key()
+    payload = build_request(user_message, previous_assistant_message)
+    for attempt in range(retries):
+        start = time.perf_counter()
+        resp = requests.post(API_URL, json=payload, timeout=60,
+                             headers={"Authorization": f"Bearer {api_key}"})
+        latency = time.perf_counter() - start
+        if resp.status_code in (429, 500, 502, 503, 529) and attempt < retries - 1:
+            time.sleep(2 ** attempt)
+            continue
+        resp.raise_for_status()
+        break
+    body = resp.json()
+    answers = {k: body["answers"][k]["noul"] for k in QUESTIONS}
+    input_tokens = body["usage"]["input_tokens"]
+    return {
+        "score": combine(answers),
+        "answers": answers,
+        "latency_s": round(latency, 4),
+        "input_tokens": input_tokens,
+        "output_tokens": body["usage"].get("output_tokens", 0),
+        "cost_usd": body["usage"].get("cost", input_tokens * PRICE_PER_INPUT_TOKEN),
+        "model": body.get("model", MODEL),
+        "request": payload,
+    }
+
