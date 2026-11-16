@@ -1,12 +1,74 @@
-\section{Problem Formulation}
+% Milestone item c. Owner: Tejas Mutneja.
+\section{Formal Problem, Data, and Evaluation Metrics}
+\subsection{Problem formulation}
 \label{sec:problem}
-% TODO (owner: Tejas): formal problem, data, metrics (milestone item c).
+Let a conversation contain $N$ user turns. For turn $t$, we use the input $x_t=(u_t,a_{t-1})$, where $u_t$ is the current user message and $a_{t-1}$ is the previous assistant message. For the first turn, the previous assistant message can be empty.
 
-\subsection{Formulation}
-\label{sec:formulation}
+We set $y_t=1$ when the user adds, changes, or cancels an instruction that is meant to affect future replies; otherwise, $y_t=0$. This is our turn-level version of the paper's side-constraint definition~\cite{wang2026compaction}. A request that only changes the current answer is negative. Section~\ref{sec:data} explains how we created these labels.
+
+We keep the constraints found so far in a registry. The baseline registry $R_t^b$ and gated registry $R_t^g$ both start empty. The extractor $E(x,R)$ returns constraint texts, while $A(R,S)$ adds texts $S$ to registry $R$ and skips exact duplicates. The baseline calls the extractor on every turn:
+\begin{equation}
+\label{eq:baseline}
+R_t^b=A(R_{t-1}^b,E(x_t,R_{t-1}^b)).
+\end{equation}
+The gate gives each turn a score $g(x_t)\in[0,1]$. We define $d_t=\mathbf{1}[g(x_t)\geq\tau]$, where $\tau$ is the threshold. The gated registry is updated only when the turn passes:
+\begin{equation}
+\label{eq:gated}
+R_t^g=\begin{cases}
+A(R_{t-1}^g,E(x_t,R_{t-1}^g)),&d_t=1,\\
+R_{t-1}^g,&d_t=0.
+\end{cases}
+\end{equation}
+Both registries are append-only, so they cannot remove or replace an old constraint. We still label cancellations as positive because this is a limitation of the extractor, not of the task definition.
+
+Let $K(\tau)=\sum_{t=1}^{N}d_t$ be the number of turns sent to the extractor. We want to make this number as small as possible while keeping recall on constraint turns at least 0.95:
+\begin{equation}
+\label{eq:objective}
+\min_{\tau}K(\tau)\quad\text{subject to}\quad
+\operatorname{Recall}(\tau)\geq0.95.
+\end{equation}
+We prioritize recall because if the gate misses a constraint, that constraint might never get added to the registry. The goal is to match the baseline while making fewer extractor calls, not to improve extraction quality.
 
 \subsection{Data}
 \label{sec:data}
+We built the dataset from CONPACT~\cite{conpact}, using WildChat conversations~\cite{zhao2024wildchat}, Hermes agent traces, and SWE-Natural GitHub issues. Each of the 50 released histories appears 15 times, once for every constraint, and all constraints use the same ``For the rest of this session.'' framing. Because the original unit is a roughly 100K-token history, we converted it into individual user turns.
 
-\subsection{Evaluation Metrics}
-\label{sec:metrics}
+We paired each user turn with the previous assistant message, removed empty turns, and de-duplicated while ignoring case and whitespace. WildChat fell from 12,861 turns to 9,779. Hermes had only 94 unique turns across 50 histories, so it added little data for gating. Non-English turns and turns over 6,000 characters were left out of sampling. Histories were split 30/70 into validation and test so no conversation appears in both.
+
+For injected positives, we placed each constraint before a real user turn using four framings: no prefix, the session prefix, ``This is an important constraint:'', and both prefixes. The 15 constraints cover five types: Action, Information, Process, Preference, and Output. Validation uses constraints 1, 4, 7, 10, and 13, one from each type; test uses the other ten. Natural positives come from SWE-Natural and sampled WildChat turns, while negatives come from random and keyword-flagged turns.
+
+Table~\ref{tab:data} summarizes the final splits. Injected labels are known by construction, and SWE-Natural uses the paper's annotations. Claude labeled 225 sampled turns and 319 keyword-flagged stream turns using a written guide. We did not use a second human labeler, and unflagged stream turns are assumed negative.
+
+Most natural WildChat positives are persona instructions, jailbreaks, or pasted system prompts rather than simple ``from now on'' rules. Only three are in validation, compared with 33 in test. Validation and test are also more constraint-heavy than the natural stream, so they likely understate call savings on real traffic.
+
+\begin{table}[t]
+\caption{Turn-level sets and positive sources. Stream covers ten test WildChat histories. Its 100 injected instances are separate from the 98 natural positives; their overlap is unspecified, so no combined positive-turn total is asserted.}
+\label{tab:data}
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+Set & Turns & Positives & Injected & SWE & WildChat\\
+\midrule
+Validation & 100 & 28 & 20 & 5 & 3\\
+Test & 200 & 83 & 40 & 10 & 33\\
+Stream & 3,277 & $98^{*}$ & $100^{\dagger}$ & 0 & 98\\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize $^{*}$Natural positives only. $^{\dagger}$Injected instances, counted separately.
+\end{table}
+
+\subsection{Evaluation metrics}
+We treat $d_t=1$ as the gate predicting that a turn contains a constraint. Let $TP$, $FP$, and $FN$ be true positives, false positives, and false negatives. Recall tells us how many constraint turns reach the extractor, while precision tells us how many passed turns actually contain a constraint:
+\begin{equation}
+\operatorname{Recall}=\frac{TP}{TP+FN},\qquad
+\operatorname{Precision}=\frac{TP}{TP+FP}.
+\end{equation}
+Recall is the main metric, with a target of 0.95. We also report F1 and AUROC. AUROC is threshold-free and measures how often a randomly chosen positive turn receives a higher score than a randomly chosen negative turn, with ties counted as one half.
+
+For efficiency, we measure the fraction of extractor calls saved:
+\begin{equation}
+S=1-\frac{K}{N}.
+\end{equation}
+We also track total cost and latency per turn; Section~\ref{sec:cost} gives the cost model. These efficiency results are reported on the stream set because its natural constraint rate is closer to real traffic. Injected stream results are kept separate.
+
+For the final report, we also plan to measure retention with an LLM judge and compliance with the paper's A/B probes~\cite{wang2026compaction}. These test whether a constraint stays in the compacted context and whether the assistant still follows it. We choose $\tau$ using validation only, report precision, recall, and recall by category on test, and report calls saved, cost, and latency on the stream.

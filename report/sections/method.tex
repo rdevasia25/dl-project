@@ -1,18 +1,75 @@
+% Milestone item d. Owner: Tejas Mutneja.
 \section{Method}
-\label{sec:method}
-% TODO (owner: Tejas): method (milestone item d).
-
 \subsection{Overview}
-\label{sec:overview}
+Figure~\ref{fig:pipeline} compares the two pipelines. The baseline sends every turn to the extractor. The gated pipeline first asks Jev to score the turn and only runs the extractor when the score is at least $\tau$. Everything else is kept the same: the extractor, prompt, model, settings, and input conversations. By keeping everything else the same, we can isolate the effect of adding the gate. Both process turns in order and maintain their own registry, so the gated registry can differ after a skipped turn. We want to see how many extractor calls we can avoid without missing too many constraints.
 
-\subsection{Baseline Extractor}
-\label{sec:baseline}
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth,
+ box/.style={draw,rounded corners,align=center,font=\scriptsize,inner sep=4pt},
+ every path/.style={line width=.5pt}]
+\node[font=\scriptsize,anchor=west] at (0,1.85) {Baseline};
+\node[box] (b1) at (.4,1.35) {Turn};
+\node[box] (b2) at (3.3,1.35) {Extractor};
+\node[box] (b3) at (6.5,1.35) {Registry};
+\draw[->] (b1)--(b2);\draw[->] (b2)--(b3);
+\node[font=\scriptsize,anchor=west] at (0,.8) {Gated};
+\node[box] (g1) at (.4,.2) {Turn};
+\node[box] (g2) at (1.8,.2) {Jev score};
+\node[box] (g3) at (3.4,.2) {$g(x_t)\geq\tau$?};
+\node[box] (g4) at (5,.2) {Extractor};
+\node[box] (g5) at (6.5,.2) {Registry};
+\draw[->] (g1)--(g2);\draw[->] (g2)--(g3);
+\draw[->] (g3)--node[above,font=\scriptsize]{yes}(g4);
+\draw[->] (g4)--(g5);
+\node[box] (skip) at (3.4,-.7) {Skip; registry unchanged};
+\draw[->] (g3)--node[right,font=\scriptsize]{no}(skip);
+\end{tikzpicture}
+\caption{Baseline extraction on every turn versus Jev-controlled routing. Skipped turns leave the gated registry unchanged.}
+\label{fig:pipeline}
+\end{figure}
 
-\subsection{Jev Gate}
-\label{sec:gate}
+\subsection{Baseline extractor}
+The baseline uses the paper's side-constraint extractor, with the prompt and parser pinned from the released code~\cite{compactionintegrity}. It runs \texttt{Qwen/Qwen3.5-9B}~\cite{qwen35} through DeepInfra with thinking disabled, temperature zero, top-p one, and a maximum of 4,096 output tokens. Each call receives the current user message, the previous assistant message, and the current registry. The model returns candidate constraint texts, which the parser adds to the registry.
 
-\subsection{Threshold Selection}
-\label{sec:threshold}
+The registry is append-only. Exact duplicate texts are skipped, but an old constraint cannot be removed or replaced when the user changes their instruction. Differently worded duplicates can also remain. We log latency, token counts, cost, and raw output for every call. The paper reports roughly 90--95\% constraint retention for this extractor~\cite{wang2026compaction}; we do not report our own baseline accuracy until our evaluation has been run.
 
-\subsection{Cost and Latency Model}
+\subsection{Jev gate}
+We use the pinned model \texttt{typesafe/jev-1.14} through OpenRouter's decisions API~\cite{openrouterdecisions}. Jev's Noul interface answers yes/no questions with probabilities~\cite{typesafenoul}, which fits this task because the gate only needs to decide whether a turn should reach the extractor. We ask two questions: whether the message sets a rule for future replies, and whether it cancels or changes an earlier standing rule. We use two separate questions so that setting a new constraint and changing an existing one can be detected independently.
+
+The questions follow the same rules as our labeling guide. Future-facing instructions, lasting preferences, relevant facts about the user, and persona or system prompts count; one-off formatting requests or fixes do not. Let $p_{\mathrm{set}}(x_t)$ and $p_{\mathrm{change}}(x_t)$ be the two returned probabilities. We score the turn with
+\begin{equation}
+g(x_t)=\max\{p_{\mathrm{set}}(x_t),p_{\mathrm{change}}(x_t)\}.
+\end{equation}
+Using the maximum means either question can send the turn to the extractor. Jev sees up to 6,000 characters of the user message and the last 1,000 characters of the previous assistant message, since that ending is closest to the user's reply. We use the provider-reported gate cost when available; otherwise the code estimates \$0.042 per million input tokens. Algorithm~\ref{alg:gate} shows the full routing loop.
+
+\begin{algorithm}[t]
+\caption{Gated extraction with an append-only registry}
+\label{alg:gate}
+\begin{algorithmic}[1]
+\STATE $R_0^g\gets[\,]$
+\FOR{$t=1,\ldots,N$}
+\STATE Compute $g(x_t)=\max\{p_{\mathrm{set}}(x_t),p_{\mathrm{change}}(x_t)\}$
+\IF{$g(x_t)\geq\tau$}
+\STATE $R_t^g\gets A(R_{t-1}^g,E(x_t,R_{t-1}^g))$
+\ELSE
+\STATE $R_t^g\gets R_{t-1}^g$; record skip
+\ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Threshold selection}
+We score each turn once and then apply the evaluation script's threshold grid $\{0.05,0.1,0.2,\ldots,0.9\}$ without making any more API calls. We choose the highest threshold whose validation recall is at least 0.95, since this gives the fewest extractor calls among the thresholds that meet the recall target. We fix that threshold before looking at test results. If no threshold qualifies, we report that the target was not met. Test labels are never used to adjust $\tau$.
+
+\subsection{Cost and latency model}
 \label{sec:cost}
+Let $c_E$ be the cost of one extractor call and $c_G$ the gate cost per turn, including both Jev questions. If we treat these as constant per-call costs,
+\begin{equation}
+C_b=Nc_E,\qquad C_g=Nc_G+Kc_E.
+\end{equation}
+For $S>0$, the gated pipeline is cheaper when
+\begin{equation}
+C_g<C_b\quad\Longleftrightarrow\quad c_E>\frac{c_G}{S}.
+\end{equation}
+Since we call the gate on every turn, we need to save enough extractor calls to make up for that extra cost. In the actual evaluation, we use the logged per-call costs so different input lengths are reflected in the totals. Let $\ell_{G,t}$ and $\ell_{E,t}$ be the gate and extractor latencies. Turn $t$ takes $\ell_{G,t}+d_t\ell_{E,t}$, so every turn pays the gate latency, while skipped turns avoid the extractor latency.
