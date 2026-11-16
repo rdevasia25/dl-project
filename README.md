@@ -10,6 +10,10 @@ to separate workstreams.
 Stages 1–6 are implemented and validated offline. The package includes the shared
 contract, pinned upstream prompt/parser, append-only core, injectable DeepInfra
 adapter, scripted mock runtime, JSONL CLI, and permanent unit tests.
+Released-dataset adaptation and full independent injection replay are implemented
+and tested offline. See [BASELINE_INTEGRATION_PLAN.md](BASELINE_INTEGRATION_PLAN.md)
+for validation and teammate questions. The Git merge from main remains blocked
+by sandbox metadata permissions; dataset checks used verified external snapshots.
 Stage 7 (authorized live smoke testing) remains pending. No extraction accuracy
 or successful live provider behavior is claimed.
 
@@ -112,7 +116,7 @@ Semantic paraphrase suppression belongs to the model. Evidence verification
 stays disabled to match the inspected main extraction configuration.
 
 The registry cannot replace, revoke, expire, or resolve conflicting constraints.
-Modification/revocation tests will document this upstream limitation. Sentence
+Modification/revocation tests document this upstream limitation. Sentence
 windowing and the separate SWE-Natural prompt are excluded from this baseline.
 
 The target is hosted DeepInfra `Qwen/Qwen3.5-9B`, thinking disabled, with a
@@ -123,7 +127,7 @@ The exact hosted settings are documented below. No forced JSON decoding or new p
 
 ## Development and handoff
 
-Use Python 3.14 in an isolated environment. The current code uses only the
+Use Python 3.11+ in an isolated environment. The current code uses only the
 standard library and requires no pip packages, dataset, model download, or API key.
 Mocked tests run offline. Live calls require separate user approval;
 credentials will be read from `DEEPINFRA_API_KEY` and never stored in code.
@@ -131,8 +135,10 @@ credentials will be read from `DEEPINFRA_API_KEY` and never stored in code.
 The JSONL runner accepts the request fields above in conversational
 order and manages independent registries. It will reject duplicate IDs, refuse
 output overwrites, and support explicit mock/live modes and a record limit.
-Real dataset mapping and shared research evaluation wait
-for teammate integration; baseline implementation and mocked tests do not.
+The released dataset includes extra metadata and uses id/conpact_id instead of
+message_id. Use the dataset runner below rather than this strict generic CLI.
+Sampled examples need independent state; full streams need conversation state.
+Shared research evaluation remains team-owned.
 
 All collaborators start from committed `main` and create their own feature
 branches: `feature/data`, `feature/baseline`, and `feature/jev`. This work uses
@@ -147,8 +153,9 @@ local exclusions before staging files.
 
 ## Run locally
 
-Python 3.14 is the tested environment (3.11+ syntax); no third-party packages
-are required. From the repository root:
+Tests have passed on Python 3.14, Python 3.15.2 and Python 3.11.0; no third-party packages
+are required. If .venv is absent, create it first with an SSL-enabled Python:
+`python3 -m venv --without-pip .venv`. From the repository root:
 
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
@@ -249,10 +256,81 @@ are required by the extractor. Data construction, gating, metrics and final team
 evaluation are outside this package. All collaborators should review the shared
 contract before running on team data.
 
-Minimum remaining integration: review changes, commit locally, authorize a smoke
+The baseline implementation is committed and pushed at ceb40a8. Remaining work:
+complete the blocked merge of current main into feature/baseline, rerun
+the verified dataset checks from that checkout, then authorize a smoke
 of at most three short turns (ordinary, persistent constraint, then duplicate or
 one-turn instruction), verify returned model/JSON/no reasoning/usage/cost and state,
 then agree on the data mapping and identical runtime configuration with Jev.
 The proposed smoke budget is $0.01, to be rechecked against current pricing before
 approval; it is an estimate, not an enforced cap. No full research evaluation or
 report is included in this implementation.
+
+
+## Released-dataset runner
+
+After merging main into feature/baseline, use the released files directly without
+rebuilding the dataset or installing its build dependencies. Current main inspected:
+`f8a3ffc5c4bb6ab68eb71bb4bb79ea38855cc132`. Keep this revision argument aligned
+with your actual dataset source; the manifest also records exact input hashes.
+
+For a tiny mock check, create three scripted empty outputs under ignored runs/:
+
+```bash
+mkdir -p runs
+.venv/bin/python -c 'import json; print((json.dumps(json.dumps({"scs": []}))+"\n")*3, end="")' > runs/empty-responses.jsonl
+.venv/bin/python -m sc_baseline.dataset_runner \
+  --input dataset/data/final/val.jsonl --dataset-mode examples \
+  --dataset-revision f8a3ffc5c4bb6ab68eb71bb4bb79ea38855cc132 \
+  --mode mock --mock-responses runs/empty-responses.jsonl --limit 3 \
+  --output runs/val-smoke.jsonl
+```
+
+Choose a new output name each time. The runner also writes
+`runs/val-smoke.jsonl.manifest.json`. For the clean stream, use
+`--input dataset/data/final/stream_turns.jsonl --dataset-mode stream`.
+For full injected variants use these input arguments:
+
+```bash
+--input dataset/data/final/stream_injections.jsonl --dataset-mode injections \
+--clean-stream dataset/data/final/stream_turns.jsonl
+```
+
+All other options stay the same. `--limit 3` produces an explicitly incomplete
+mock smoke; remove it only when the intended full run is authorized and, in mock
+mode, enough scripted responses are available. Live mode uses `--mode live` and
+omits `--mock-responses`; paid calls require separate approval.
+
+Modes and state:
+
+- **examples:** each validation/test record starts with an empty registry. Its
+  execution conversation ID is a namespaced source ID, preventing sample leakage.
+- **stream:** each source conversation maintains its own registry, processing
+  every supplied user turn sequentially with full preceding assistant context.
+- **injections:** each conpact_id defines a separate full replay. Replace the
+  indicated user message, start at the beginning with an empty registry, and
+  process every user turn, keeping the original observed assistant context.
+
+Every output has `source` identifiers and an `extraction` snapshot matching the
+shared contract. Source includes original row ID/conversation/turn index and, for
+variants, conpact_id as variant_id and an injection_turn flag. Gold labels and
+constraints never enter prompts or initialize registries. Later calls in a variant
+see that variant's state; clean or other-variant results are never substituted.
+
+A complete release run plans 100 validation attempts, 200 test attempts, 3,277
+clean-stream attempts and 32,770 injected-variant attempts. Counts are plans, not
+observed paid usage. This implements extraction only; it does not regenerate
+assistant responses, judge semantic retention, or measure downstream compliance.
+
+The manifest records dataset/code/config provenance, planned/selected/processed
+turns, attempt count, known cost subtotal and missing-cost/usage counts. Total cost
+is null when any processed result has unknown cost. `complete` means all planned
+turns processed successfully; `limited` means an explicit smoke prefix; `failed`
+means interrupted/errored processing. Hard process termination may leave `running`,
+which must be treated as incomplete. Run files are private; no restart/resume or
+application cache is implemented. Exit codes match the generic runner (0/1/2).
+
+The two pending team questions—Jev input caps and full injection replay versus the
+dataset's changed-turn shortcut—are recorded in the integration plan. Baseline uses
+full text and full independent variant replays per the user's instruction. Teammate
+components and the final research evaluation remain outside baseline ownership.
