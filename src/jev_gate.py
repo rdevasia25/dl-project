@@ -141,3 +141,23 @@ def jev_score(user_message, previous_assistant_message=None, api_key=None, retri
         "request": payload,
     }
 
+
+def should_extract(score, threshold=DEFAULT_THRESHOLD):
+    return score >= threshold
+
+
+def gated_extract(user_message, previous_assistant_message, run_extractor,
+                  threshold=DEFAULT_THRESHOLD):
+    """Approach B for one turn: ask Jev, and run the baseline extractor only if needed.
+
+    run_extractor: a no-argument function that runs Person 1's extractor for this turn, e.g.
+        from sc_baseline import extract_turn
+        out = gated_extract(msg, prev, lambda: extract_turn(request, registry, runtime), 0.3)
+        registry = out["extraction"].registry if out["extracted"] else registry
+    The registry is not touched when extraction is skipped (same procedure as the baseline).
+    """
+    gate = jev_score(user_message, previous_assistant_message)
+    extracted = should_extract(gate["score"], threshold)
+    return {"gate": gate, "extracted": extracted,
+            "extraction": run_extractor() if extracted else None}
+
