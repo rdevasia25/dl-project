@@ -161,3 +161,29 @@ def gated_extract(user_message, previous_assistant_message, run_extractor,
     return {"gate": gate, "extracted": extracted,
             "extraction": run_extractor() if extracted else None}
 
+
+# ---------------------------------------------------------------------------
+# Command line: score a dataset file and save one JSON line per turn
+# ---------------------------------------------------------------------------
+def pick_rows(rows, n, seed=42):
+    """n=0 -> all rows. Otherwise half positive, half negative, spread across categories
+    (round-robin, fixed seed) so a small sample isn't all one easy category."""
+    if n <= 0:
+        return rows
+    rng = random.Random(seed)
+
+    def spread(group, k):
+        by_cat = {}
+        for r in rng.sample(group, len(group)):
+            by_cat.setdefault(r.get("category"), []).append(r)
+        picked, queues = [], [by_cat[c] for c in sorted(by_cat, key=str)]
+        while len(picked) < k and any(queues):
+            for q in queues:
+                if q and len(picked) < k:
+                    picked.append(q.pop())
+        return picked
+
+    pos = [r for r in rows if r.get("is_persistent_constraint")]
+    neg = [r for r in rows if not r.get("is_persistent_constraint")]
+    return spread(pos, n // 2) + spread(neg, n - n // 2)
+
