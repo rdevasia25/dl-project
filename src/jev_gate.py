@@ -187,3 +187,47 @@ def pick_rows(rows, n, seed=42):
     neg = [r for r in rows if not r.get("is_persistent_constraint")]
     return spread(pos, n // 2) + spread(neg, n - n // 2)
 
+
+def main():
+    ap = argparse.ArgumentParser(description="Score user turns with the Jev gate")
+    ap.add_argument("--data", default="dataset/data/final/val.jsonl")
+    ap.add_argument("--n", type=int, default=10, help="balanced sample size; 0 = all rows")
+    ap.add_argument("--out", default=None, help="default: results/jev_<datafile>_n<N>.jsonl")
+    args = ap.parse_args()
+
+    rows = [json.loads(line) for line in open(args.data)]
+    rows = pick_rows(rows, args.n)
+    out = Path(args.out or f"results/jev_{Path(args.data).stem}_n{args.n}.jsonl")
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    api_key = load_api_key()
+    results = []
+    with open(out, "w") as f:
+        for r in rows:
+            g = jev_score(r["user_message"], r.get("previous_assistant_message"), api_key)
+            rec = {
+                "id": r["id"],
+                "category": r.get("category"),
+                "is_persistent_constraint": r.get("is_persistent_constraint"),
+                "jev_score": g["score"],
+                "jev_answers": g["answers"],
+                "latency_s": g["latency_s"],
+                "input_tokens": g["input_tokens"],
+                "cost_usd": g["cost_usd"],
+                "model": g["model"],
+                "request": g["request"],
+            }
+            f.write(json.dumps(rec) + "\n")
+            results.append(rec)
+            label = "POS" if rec["is_persistent_constraint"] else "neg"
+            print(f"{rec['id']:<10} {label}  score={rec['jev_score']:.2f}  "
+                  f"({rec['category']})  {r['user_message'][:70]!r}")
+
+    # Quick summary only; Person 3 owns the full evaluation.
+    print(f"\nSaved {len(results)} rows to {out}")
+    print(f"Total cost ${sum(x['cost_usd'] for x in results):.6f}, "
+          f"mean latency {sum(x['latency_s'] for x in results) / len(results):.2f}s")
+
+
+if __name__ == "__main__":
+    main()
