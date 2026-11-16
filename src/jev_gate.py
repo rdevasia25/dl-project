@@ -41,6 +41,49 @@ USER_MESSAGE_MAX_CHARS = 6000    # dataset already drops longer turns; this is a
 DEFAULT_THRESHOLD = 0.5
 THRESHOLDS = [0.1, 0.3, 0.5, 0.7, 0.9]
 
+# Two atomic yes/no questions (TypeSafe advice: one judgment per question, combine in code).
+# They mirror the "label 1" rules of dataset/LABELING_GUIDE.md and the paper's extractor prompt.
+QUESTIONS = {
+    "sets_ongoing_rule": {
+        "type": "noul",
+        "instructions": (
+            "Does `user_message` give the assistant an instruction or preference that the user "
+            "wants applied to future replies in this conversation, not only to the current request?"
+        ),
+        "criteria": {
+            "true": (
+                "The user sets a rule for later turns: scope words like 'from now on', 'always', "
+                "'never', 'for the rest of this chat'; a lasting preference such as 'use metric "
+                "units in everything you tell me'; a fact about themselves that should shape every "
+                "answer, such as 'I'm dyslexic so short replies help'; or a persona or system prompt "
+                "meant to govern the rest of the chat. The rule may be attached to an ordinary request."
+            ),
+            "false": (
+                "The message only asks for the current answer: the task itself, a format or length "
+                "for this reply ('make it 3 bullet points'), a one-off fix of the last reply "
+                "('redo it as a table'), background with no instruction ('I work at a hospital'), "
+                "or politeness."
+            ),
+        },
+    },
+    "changes_earlier_rule": {
+        "type": "noul",
+        "instructions": (
+            "Does `user_message` cancel or change a standing rule the user set earlier for how the "
+            "assistant should reply from now on?"
+        ),
+        "criteria": {
+            "true": "For example 'stop using uppercase from now on' or 'actually, switch back to imperial units going forward'.",
+            "false": "The message does not refer to any earlier standing rule, or only corrects the last reply once.",
+        },
+    },
+}
+
+
+def combine(answers):
+    """Truth table in code: extract if EITHER question says yes. Score = max of the two."""
+    return max(answers["sets_ongoing_rule"], answers["changes_earlier_rule"])
+
 
 # ---------------------------------------------------------------------------
 # Core functions (what the pipeline imports)
