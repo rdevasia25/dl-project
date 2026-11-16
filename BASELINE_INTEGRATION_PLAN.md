@@ -2,8 +2,8 @@
 
 Updated 2026-11-16. User authorized implementation and chose the paper's baseline
 behavior pending teammate discussion. Dataset adaptation and offline validation
-are complete on feature/baseline; Git fetch/merge/commit remain blocked by sandbox
-metadata permissions. No paid inference has been authorized or run.
+are complete on feature/baseline. The user committed integration as bdbede9 and
+merged main at 0ede028; post-merge tests and all dataset preflight checks pass. No paid inference has been authorized or run.
 
 ## Implemented
 
@@ -90,11 +90,9 @@ inter-annotator agreement; interpretation/spot checks remain DATA/team-owned.
 
 ## Remaining actions
 
-1. Review and commit local baseline/docs files, then fetch and merge origin/main
-   while on feature/baseline. The sandbox denied .git/FETCH_HEAD; no fetch, merge
-   or commit was completed. Reinspect any newer main tree/instructions before
-   merging. Main and teammate files have not been changed by this work.
-2. Run unit tests and dataset preflight/small mock checks from the merged checkout.
+1. Completed by user: integration commit bdbede9 and merge 0ede028 on feature/baseline.
+2. Verified post-merge: 49 tests pass and all four actual dataset inputs validate
+   with planned counts 100/200/3277/32770. No live inference was run.
 3. Confirm the two handoff issues above with teammates. No messages have been sent.
 4. Separately authorize Stage 7: at most three short live calls with a proposed
    $0.01 estimate, rechecking current price first. Existing tests/fixtures/turns.jsonl

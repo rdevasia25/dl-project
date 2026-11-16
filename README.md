@@ -12,8 +12,8 @@ contract, pinned upstream prompt/parser, append-only core, injectable DeepInfra
 adapter, scripted mock runtime, JSONL CLI, and permanent unit tests.
 Released-dataset adaptation and full independent injection replay are implemented
 and tested offline. See [BASELINE_INTEGRATION_PLAN.md](BASELINE_INTEGRATION_PLAN.md)
-for validation and teammate questions. The Git merge from main remains blocked
-by sandbox metadata permissions; dataset checks used verified external snapshots.
+for validation and teammate questions. Main is merged into feature/baseline
+at 0ede028; all 49 tests and dataset preflight checks pass in the merged checkout.
 Stage 7 (authorized live smoke testing) remains pending. No extraction accuracy
 or successful live provider behavior is claimed.
 
@@ -257,8 +257,7 @@ evaluation are outside this package. All collaborators should review the shared
 contract before running on team data.
 
 The baseline implementation is committed and pushed at ceb40a8. Remaining work:
-complete the blocked merge of current main into feature/baseline, rerun
-the verified dataset checks from that checkout, then authorize a smoke
+authorize a live smoke
 of at most three short turns (ordinary, persistent constraint, then duplicate or
 one-turn instruction), verify returned model/JSON/no reasoning/usage/cost and state,
 then agree on the data mapping and identical runtime configuration with Jev.
