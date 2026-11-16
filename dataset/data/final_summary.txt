@@ -1,0 +1,53 @@
+{
+  "val": {
+    "total": 100,
+    "positive": 28,
+    "negative": 72,
+    "by_category": {
+      "keyword_flagged_turn": 22,
+      "injected_sc": 20,
+      "random_turn": 50,
+      "natural_sc_swe": 5,
+      "natural_sc_wildchat": 3
+    },
+    "positives_by_sc_type": {
+      "Action": 5,
+      "Preference": 5,
+      "Process": 6,
+      "Output": 8,
+      "Information": 4
+    },
+    "positives_by_action": {
+      "add": 28
+    }
+  },
+  "test": {
+    "total": 200,
+    "positive": 83,
+    "negative": 117,
+    "by_category": {
+      "natural_sc_wildchat": 33,
+      "random_turn": 93,
+      "injected_sc": 40,
+      "keyword_flagged_turn": 24,
+      "natural_sc_swe": 10
+    },
+    "positives_by_sc_type": {
+      "Output": 37,
+      "Process": 15,
+      "Preference": 11,
+      "Action": 11,
+      "Information": 9
+    },
+    "positives_by_action": {
+      "add": 83
+    }
+  },
+  "stream": {
+    "turns": 3277,
+    "natural_positives": 98,
+    "flagged_unlabeled": 0
+  },
+  "agreement": {},
+  "dropped_unlabeled": 0
+}

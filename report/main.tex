@@ -1,0 +1,40 @@
+%% Milestone 1 report — ACM sigconf format (acmart v2.21, files in this folder).
+%% Each section lives in its own file under sections/. Edit only your own file;
+%% changes to this main.tex go through one person.
+\documentclass[sigconf,nonacm]{acmart}  % nonacm: class project, no ACM copyright/DOI block
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\begin{document}
+
+\title{TODO: Report title}
+
+%% TODO: fill in names and net IDs
+\author{Tejas Mutneja}
+\affiliation{\institution{Cornell Tech}\city{New York}\country{USA}}
+\email{TODO netid}
+
+\author{Rahul Devasia}
+\affiliation{\institution{Cornell Tech}\city{New York}\country{USA}}
+\email{TODO netid}
+
+\author{Jalil Jabbarli}
+\affiliation{\institution{Cornell Tech}\city{New York}\country{USA}}
+\email{TODO netid}
+
+\maketitle
+
+\input{sections/intro}       % a, b: problem and base paper
+\input{sections/problem}     % c: formal problem, data, metrics
+\input{sections/method}      % d: method
+\input{sections/results}     % e: preliminary results
+\input{sections/ownership}   % required: who owned what
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+\input{sections/appendix_ai} % required: AI use
+
+\end{document}
