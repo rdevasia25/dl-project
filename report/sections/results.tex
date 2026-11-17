@@ -27,4 +27,59 @@ Our baseline implements the same per-user-turn extraction and append-only
 registry procedure. All 49 offline software tests pass, and small dataset runs
 with scripted model responses complete successfully.
 
-% Teammate-owned Jev preliminary results can be added below independently.
+\subsection{Jev gate}
+\label{sec:jev-results}
+% Owner: Jalil Jabbarli.
+As a first check of the gate, we scored a balanced sample of 10 validation
+turns (5 positive, 5 negative, spread across categories with a fixed seed)
+with the pinned Jev model. Each turn was scored once; Table~\ref{tab:jev-n10}
+applies several thresholds to those saved scores, so the sweep needed no
+extra API calls. This sample is far too small to choose $\tau$ and is not
+representative of the class balance of the full validation set; we report it
+only to show that the gate runs end to end and to identify early failure modes.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Jev gate on a balanced 10-turn validation sample (5 positive,
+  5 negative). $K$ is the number of turns sent to the extractor and $S=1-K/N$
+  the fraction of extractor calls saved.}
+  \label{tab:jev-n10}
+  \begin{tabular}{rrrrrrr}
+    \toprule
+    $\tau$ & $K$ & TP & FP & Recall & Precision & $S$ \\
+    \midrule
+    0.05 & 8 & 5 & 3 & 1.00 & 0.63 & 0.20 \\
+    0.10 & 4 & 3 & 1 & 0.60 & 0.75 & 0.60 \\
+    0.30 & 3 & 3 & 0 & 0.60 & 1.00 & 0.70 \\
+    0.50 & 2 & 2 & 0 & 0.40 & 1.00 & 0.80 \\
+    0.90 & 1 & 1 & 0 & 0.20 & 1.00 & 0.90 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Ranking.} The AUROC on this sample is 0.92. All five negatives,
+including three keyword-flagged turns chosen to look like constraints, scored
+at most 0.11. The two injected constraints scored 0.99 (``never include my
+name in your replies'') and 0.86 (a preference for arXiv papers), and a
+natural WildChat turn with writing-style rules scored 0.36.
+
+\paragraph{Failure mode.} The two SWE-Natural positives scored only 0.08 and
+0.07, below the highest-scoring negative. Both are long GitHub issues
+(about 4,000 and 4,800 characters) in which the constraint is a small part of
+a task description. They are the only positives missed at $\tau=0.10$
+and $\tau=0.30$. As a result, the only threshold on our grid that
+reaches the 0.95 recall target on this sample is $\tau=0.05$, which saves just
+20\% of extractor calls. Improving recall on long, task-heavy turns without
+admitting more negatives is therefore the main question for the full run.
+
+\paragraph{Gate cost and latency.} Scoring all 10 turns cost
+\$0.00043 in total (about \$0.000043 per turn, as reported by OpenRouter) at
+an average of 1,028 input tokens per call. Mean latency was 0.28\,s per turn
+(median 0.25\,s, maximum 0.61\,s). Every gate call succeeded; failed calls are
+raised as errors rather than counted as negatives.
+
+\paragraph{Next steps.} We will score all 100 validation turns, select $\tau$
+as the highest threshold whose validation recall is at least 0.95, and then report recall on the test
+set and calls saved, cost, and latency on the stream set. We also plan to
+compare the gate's per-turn cost against logged extractor costs to check the
+break-even condition $c_E>c_G/S$ from our cost model.
