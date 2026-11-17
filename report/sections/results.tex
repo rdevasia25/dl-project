@@ -30,56 +30,77 @@ with scripted model responses complete successfully.
 \subsection{Jev gate}
 \label{sec:jev-results}
 % Owner: Jalil Jabbarli.
-As a first check of the gate, we scored a balanced sample of 10 validation
-turns (5 positive, 5 negative, spread across categories with a fixed seed)
-with the pinned Jev model. Each turn was scored once; Table~\ref{tab:jev-n10}
-applies several thresholds to those saved scores, so the sweep needed no
-extra API calls. This sample is far too small to choose $\tau$ and is not
-representative of the class balance of the full validation set; we report it
-only to show that the gate runs end to end and to identify early failure modes.
+We ran the gate in four steps, each answering a question raised by the one
+before. Every turn is scored once and thresholds are applied to the saved
+scores. Table~\ref{tab:jev} summarizes the runs. Variant A is the two-question
+gate of the Method section; variant B is introduced below.
 
 \begin{table}[htbp]
   \centering
-  \caption{Jev gate on a balanced 10-turn validation sample (5 positive,
-  5 negative). $K$ is the number of turns sent to the extractor and $S=1-K/N$
-  the fraction of extractor calls saved.}
-  \label{tab:jev-n10}
-  \begin{tabular}{rrrrrrr}
+  \small
+  \caption{Jev gate runs. $\tau$ is the highest threshold with validation
+  recall $\geq 0.95$, fixed before scoring test. Saved $=1-K/N$.}
+  \label{tab:jev}
+  \begin{tabular}{llrrrrr}
     \toprule
-    $\tau$ & $K$ & TP & FP & Recall & Precision & $S$ \\
+    Run & Gate & $\tau$ & Recall & FP & Saved & AUROC \\
     \midrule
-    0.05 & 8 & 5 & 3 & 1.00 & 0.63 & 0.20 \\
-    0.10 & 4 & 3 & 1 & 0.60 & 0.75 & 0.60 \\
-    0.30 & 3 & 3 & 0 & 0.60 & 1.00 & 0.70 \\
-    0.50 & 2 & 2 & 0 & 0.40 & 1.00 & 0.80 \\
-    0.90 & 1 & 1 & 0 & 0.20 & 1.00 & 0.90 \\
+    Pilot (val, 10)  & A & 0.05 & 1.00 & 3  & 20\% & 0.92 \\
+    Val (100)        & A & 0.05 & 1.00 & 33 & 39\% & 0.97 \\
+    Val (100)        & B & 0.80 & 1.00 & 1  & 71\% & 0.997 \\
+    Test (200)       & A & 0.05 & 0.98 & 67 & 26\% & 0.95 \\
+    Test (200)       & B & 0.80 & 0.92 & 15 & 54\% & 0.95 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Ranking.} The AUROC on this sample is 0.92. All five negatives,
-including three keyword-flagged turns chosen to look like constraints, scored
-at most 0.11. The two injected constraints scored 0.99 (``never include my
-name in your replies'') and 0.86 (a preference for arXiv papers), and a
-natural WildChat turn with writing-style rules scored 0.36.
+\paragraph{1. Pilot (10 validation turns)} A balanced sample (5 positive,
+5 negative) to check that the gate runs end to end and to look for early
+failure modes. Injected constraints scored 0.86--0.99 and all negatives
+$\leq 0.11$, but both SWE-Natural positives scored below 0.10.
 
-\paragraph{Failure mode.} The two SWE-Natural positives scored only 0.08 and
-0.07, below the highest-scoring negative. Both are long GitHub issues
-(about 4,000 and 4,800 characters) in which the constraint is a small part of
-a task description. They are the only positives missed at $\tau=0.10$
-and $\tau=0.30$. As a result, the only threshold on our grid that
-reaches the 0.95 recall target on this sample is $\tau=0.05$, which saves just
-20\% of extractor calls. Improving recall on long, task-heavy turns without
-admitting more negatives is therefore the main question for the full run.
+\paragraph{2. Full validation, variant A (100 turns)} To pick $\tau$ on the
+real class mix. Injected constraints averaged 0.96 and random turns 0.05,
+but SWE-Natural positives averaged only 0.14. Reaching 0.95 recall required
+$\tau=0.05$, which saves 39\% of extractor calls.
 
-\paragraph{Gate cost and latency.} Scoring all 10 turns cost
-\$0.00043 in total (about \$0.000043 per turn, as reported by OpenRouter) at
-an average of 1,028 input tokens per call. Mean latency was 0.28\,s per turn
-(median 0.25\,s, maximum 0.61\,s). Every gate call succeeded; failed calls are
-raised as errors rather than counted as negatives.
+\paragraph{3. Error analysis and variant B} The missed SWE-Natural
+constraints are task-level remarks inside GitHub issues (e.g., ``I do not
+want to do it in the common definitions!''), not ``from now on'' rules. The
+paper defines a side constraint broadly, as a requirement on how a task is
+carried out that persists through the session, and its code uses a separate,
+broader extractor prompt for SWE-Natural~\cite{compactionintegrity}. Our two
+questions, like our baseline extractor, follow the stricter general prompt.
+Variant B adds a third question, whether the message restricts \emph{how}
+the requested work is done (approaches to use or avoid, things to preserve,
+approvals), and takes the maximum of all three. Our first wording paraphrased
+two validation turns, so we rewrote it with neutral examples absent from both
+splits; the scores were nearly identical. On validation, B separated the
+classes almost perfectly (Table~\ref{tab:jev}).
 
-\paragraph{Next steps.} We will score all 100 validation turns, select $\tau$
-as the highest threshold whose validation recall is at least 0.95, and then report recall on the test
-set and calls saved, cost, and latency on the stream set. We also plan to
-compare the gate's per-turn cost against logged extractor costs to check the
-break-even condition $c_E>c_G/S$ from our cost model.
+\paragraph{4. Test (200 turns, scored once)} To check whether the validation
+gain holds with $\tau$ fixed. It held only partly. At the locked $\tau=0.80$,
+B reached recall 0.92, below the 0.95 target. Five of its seven misses are
+test-only injected constraints without ``for the rest of this session''
+(e.g., ``reply in bullet points only''), which A also scores low. B also
+flags detailed one-off WildChat requests (e.g., ``You are an experienced art
+educator\ldots''). At matched recall, B still saves more calls than A (34\%
+vs.\ 26\% at recall $\geq 0.98$; 54\% vs.\ 46\% at 0.92), and AUROC is
+similar (0.954 vs.\ 0.949). The gate costs about \$0.00004 per turn
+(\$0.00005 for B) with 0.17\,s mean latency.
+
+\paragraph{Conclusion} Jev ranks constraint turns well (test AUROC 0.95),
+but a threshold tuned on validation did not transfer to test. Most errors
+come from two sources: what counts as a constraint (task-level restrictions
+vs.\ lasting rules), and constraints stated without explicit scope words.
+Asking about task-level restrictions fixes the first for SWE-Natural but adds
+false positives on detailed WildChat requests, so the net gain is modest.
+
+\paragraph{Next steps} (i) Measure gate recall against the constraints the
+baseline extractor actually returns, since our goal is to match the
+baseline, not the labels. (ii) Ask the third question only for agent or
+coding tasks. (iii) Report calls saved, cost, and latency on the stream set.
+(iv) Compare Jev with other cheap decision models at equal recall, such as a
+small open LLM prompted with the same yes/no questions and a small encoder
+classifier fine-tuned on our labeled turns, to show whether gains come from
+Jev itself or from gating in general.
