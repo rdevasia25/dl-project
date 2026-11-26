@@ -1,4 +1,8 @@
-# First live baseline run
+# Hosted baseline preparation
+
+The class experiment used local Qwen through Ollama. See the
+[completed baseline results](BASELINE_CLASS_RESULTS.md). This document retains
+the earlier DeepInfra preparation for reference.
 
 Prepared 2026-11-16. Scope: three synthetic smoke calls, then all 100 validation
 examples. Account/key setup and explicit spending approval are still pending.

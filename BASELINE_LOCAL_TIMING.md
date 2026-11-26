@@ -66,4 +66,9 @@ second per turn adds roughly nine hours to the full injected replay.
 - On the pilot machine, ignored `runs/qwen-timing-20261126/` contains the
   selected inputs, IDs, results, manifest and before/after server metadata.
   Jev can use the same `OllamaRuntime` with `extract_turn` for matched model
-  settings. The longer runs and shared semantic evaluation remain pending.
+  settings. The [class baseline run](BASELINE_CLASS_RESULTS.md) is complete.
+
+The team experiment scope was reduced after this pilot. See the
+[revised plan](BASELINE_INTEGRATION_PLAN.md#revised-experiment-scope) for the
+300 labeled messages and 6–8 short follow-up cases under a two-hour model
+runtime budget.

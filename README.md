@@ -7,18 +7,14 @@ to separate workstreams.
 
 ## Current implementation status
 
-Stages 1–6 are implemented and validated offline. The package includes the shared
-contract, pinned upstream prompt/parser, append-only core, injectable DeepInfra
-adapter, scripted mock runtime, JSONL CLI, and permanent unit tests.
-Released-dataset adaptation and full independent injection replay are implemented
-and tested offline. See [BASELINE_INTEGRATION_PLAN.md](BASELINE_INTEGRATION_PLAN.md)
-for validation and teammate questions. Main is merged into feature/baseline
-at 0ede028; all 49 tests and dataset preflight checks pass in the merged checkout.
-Stage 7 (authorized live smoke testing) remains pending. No extraction accuracy
-or successful live provider behavior is claimed.
-The account setup, cost estimate, smoke checks, and 100-example validation commands
-are in [BASELINE_LIVE_RUN.md](BASELINE_LIVE_RUN.md). Preparation is complete;
-account/key setup and paid-call approval are required before live execution.
+The baseline implements the shared extractor, append-only registry, released
+dataset adapter, and JSONL runners. All 52 automated tests pass. The class
+experiment ran local quantized Qwen through Ollama and completed 300 labeled
+messages, six 16-turn chat prefixes, and six follow-up replies. See
+[BASELINE_CLASS_RESULTS.md](BASELINE_CLASS_RESULTS.md) for measured results and
+[BASELINE_INTEGRATION_PLAN.md](BASELINE_INTEGRATION_PLAN.md) for the matching
+experiment design. The DeepInfra runtime and
+[hosted preparation notes](BASELINE_LIVE_RUN.md) document the earlier setup.
 
 ## Shared contract
 
