@@ -115,3 +115,9 @@ The new adapter/runner are project code informed by the existing dataset schema
 and upstream sequential-pair procedure; no further upstream code was copied.
 Prompt/parser/license attribution remains in THIRD_PARTY_NOTICES.md. Academic
 AI assistance evidence is recorded in private AGENTS.override.md.
+
+## November 26 local pilot
+
+The shared extraction entrypoint now also accepts the pinned Ollama runtime.
+Six real validation requests completed. The [pilot results](BASELINE_LOCAL_TIMING.md)
+record the timings, one missed labeled positive, and estimates for larger runs.

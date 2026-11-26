@@ -158,3 +158,7 @@ Jev comparison are team-owned; larger test/stream runs require a separate budget
   outputs are pending. No inference charges were incurred by this preparation.
 - Retain the existing teammate questions about Jev input caps and independent
   full injection replay. Do not modify teammate components to resolve them here.
+
+The November 26 six-message pilot used local, quantized Qwen on the M1 Pro.
+Its [timings and model configuration](BASELINE_LOCAL_TIMING.md) are available.
+The DeepInfra commands above describe a separate hosted workflow.
