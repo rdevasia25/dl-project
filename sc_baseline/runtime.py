@@ -13,7 +13,8 @@ MODEL = 'Qwen/Qwen3.5-9B'
 ENDPOINT = 'https://api.deepinfra.com/v1/openai/chat/completions'
 # Explicit hosted adaptation; provider enforcement remains a Stage 7 check.
 SETTINGS = {'max_tokens': 4096, 'temperature': 0.0, 'top_p': 1.0,
-            'stream': False, 'n': 1, 'chat_template_kwargs': {'enable_thinking': False}}
+            'stream': False, 'n': 1, 'reasoning_effort': 'none',
+            'chat_template_kwargs': {'enable_thinking': False}}
 
 
 def configuration_id(provider, model):

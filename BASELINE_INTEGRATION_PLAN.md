@@ -3,7 +3,11 @@
 Updated 2026-11-16. User authorized implementation and chose the paper's baseline
 behavior pending teammate discussion. Dataset adaptation and offline validation
 are complete on feature/baseline. The user committed integration as bdbede9 and
-merged main at 0ede028; post-merge tests and all dataset preflight checks pass. No paid inference has been authorized or run.
+merged main at 0ede028; post-merge tests and all dataset preflight checks pass.
+Baseline integration/docs were pushed at 60fbc83. Live preparation is documented
+in [BASELINE_LIVE_RUN.md](BASELINE_LIVE_RUN.md): three smoke calls, then 100
+validation examples, after account/key setup and explicit budget approval.
+No paid inference has been authorized or run from this baseline checkout.
 
 ## Implemented
 
@@ -98,9 +102,12 @@ inter-annotator agreement; interpretation/spot checks remain DATA/team-owned.
    $0.01 estimate, rechecking current price first. Existing tests/fixtures/turns.jsonl
    provides persistent, ordinary and one-turn messages. Verify provider model,
    thinking switch, JSON, telemetry and state; stop on error.
-5. Separately estimate and authorize any larger baseline runs, then give result
-   JSONL/manifests to the team for evaluation. No full-run authorization, research
-   metrics, final report, push or PR is part of the current implementation.
+5. Initial live scope selected: smoke plus the 100 validation examples, estimated
+   together at about $0.14 with generous assumptions; proposed approval ceiling
+   $0.25. Budget approval is still pending. Follow BASELINE_LIVE_RUN.md, then give
+   result JSONL/manifests to the team for evaluation. Test/stream/injection runs
+   require separate estimates and authorization. No research metrics, final
+   report, push or PR is part of this preparation.
 
 ## Provenance
 

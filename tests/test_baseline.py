@@ -174,6 +174,9 @@ class RuntimeTests(unittest.TestCase):
         req, timeout = opener.calls[0]
         payload = json.loads(req.data)
         self.assertEqual(payload, {'model': MODEL, 'messages':opener_payload_messages(), **SETTINGS})
+        self.assertEqual(payload['reasoning_effort'], 'none')
+        self.assertEqual(payload['chat_template_kwargs'], {'enable_thinking': False})
+        self.assertEqual(payload['max_tokens'], 4096)
         self.assertEqual(req.full_url,'https://api.deepinfra.com/v1/openai/chat/completions')
         self.assertEqual(req.get_header('Authorization'), 'Bearer fake')
         self.assertGreaterEqual(result.latency_ms, 0)
@@ -218,6 +221,8 @@ class RuntimeTests(unittest.TestCase):
         a=DeepInfraRuntime(api_key='a'); b=DeepInfraRuntime(api_key='b')
         self.assertEqual(a.config_id,b.config_id)
         self.assertNotEqual(a.config_id,MockRuntime([]).config_id)
+        with patch.dict(SETTINGS, reasoning_effort='low'):
+            self.assertNotEqual(a.config_id, DeepInfraRuntime(api_key='a').config_id)
         for timeout in (0,-1,float('inf'),True):
             with self.assertRaises(ValueError): DeepInfraRuntime(timeout=timeout)
 

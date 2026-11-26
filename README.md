@@ -16,6 +16,9 @@ for validation and teammate questions. Main is merged into feature/baseline
 at 0ede028; all 49 tests and dataset preflight checks pass in the merged checkout.
 Stage 7 (authorized live smoke testing) remains pending. No extraction accuracy
 or successful live provider behavior is claimed.
+The account setup, cost estimate, smoke checks, and 100-example validation commands
+are in [BASELINE_LIVE_RUN.md](BASELINE_LIVE_RUN.md). Preparation is complete;
+account/key setup and paid-call approval are required before live execution.
 
 ## Shared contract
 
@@ -194,7 +197,10 @@ Do not resume by replaying completed live input without accounting for extra cal
 `runtime.py` uses the fixed DeepInfra OpenAI-compatible chat endpoint and model
 `Qwen/Qwen3.5-9B`. The payload explicitly sends `max_tokens=4096`,
 `temperature=0.0`, `top_p=1.0`, `n=1`, `stream=false`, and
-`chat_template_kwargs={"enable_thinking": false}`. Temperature/top-p are explicit
+`chat_template_kwargs={"enable_thinking": false}`, and `reasoning_effort="none"`.
+The explicit reasoning-effort setting was added during live preparation following
+[DeepInfra's Qwen example](https://deepinfra.com/blog/jev-alternatives); both systems
+must use this updated configuration. Temperature/top-p are explicit
 hosted engineering choices; upstream decoding parity was not established.
 Prompt/parser parity is tested independently of this hosting adaptation.
 The provider's acceptance and enforcement of the thinking switch require the
@@ -256,8 +262,9 @@ are required by the extractor. Data construction, gating, metrics and final team
 evaluation are outside this package. All collaborators should review the shared
 contract before running on team data.
 
-The baseline implementation is committed and pushed at ceb40a8. Remaining work:
-authorize a live smoke
+The baseline and dataset integration were pushed on feature/baseline at 60fbc83.
+The subsequent live-preparation changes are documented in BASELINE_LIVE_RUN.md.
+Remaining work: configure DeepInfra and authorize a live smoke
 of at most three short turns (ordinary, persistent constraint, then duplicate or
 one-turn instruction), verify returned model/JSON/no reasoning/usage/cost and state,
 then agree on the data mapping and identical runtime configuration with Jev.
