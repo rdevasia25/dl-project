@@ -340,3 +340,26 @@ The two pending team questions—Jev input caps and full injection replay versus
 dataset's changed-turn shortcut—are recorded in the integration plan. Baseline uses
 full text and full independent variant replays per the user's instruction. Teammate
 components and the final research evaluation remain outside baseline ownership.
+
+## Local Qwen timing pilot
+
+The local backend uses Ollama 0.40.18 and `qwen3.5:9b-q4_K_M`. Both runners
+accept `--mode local`, and Jev can pass an instance of
+`sc_baseline.ollama_runtime.OllamaRuntime` to the shared `extract_turn`.
+The adapter checks the installed server version and exact model digest before
+generation. It connects to 127.0.0.1:11439, disables thinking, prompt truncation
+and context shifting, and requests a 16,384-token context and 4,096-token output
+limit. The recorded zero-dollar cost covers provider fees only.
+
+This Mac's project-local installation starts from the repository root with:
+
+```sh
+OLLAMA_MODELS="$PWD/runs/local-ollama/models" OLLAMA_HOST=127.0.0.1:11439 \
+  OLLAMA_NO_CLOUD=1 OLLAMA_NUM_PARALLEL=1 ./runs/local-ollama/ollama serve
+```
+
+For another Mac, install the same Ollama version and pull the named tag into its
+server using `OLLAMA_HOST=127.0.0.1:11439 ollama pull qwen3.5:9b-q4_K_M`.
+The project-local binary and model files are under ignored `runs/`. Use the
+same settings and hardware when comparing extraction latency between systems.
+See [the timing pilot](BASELINE_LOCAL_TIMING.md) for the selected rows and timings.

@@ -11,6 +11,7 @@ import sys
 from .dataset import prepare_turns, run_turns
 from .runner import read_jsonl
 from .runtime import DeepInfraRuntime, MockRuntime
+from .ollama_runtime import OllamaRuntime
 
 
 def _load(path):
@@ -39,7 +40,7 @@ def main(argv=None):
     parser.add_argument('--clean-stream', help='Required for full injection replays')
     parser.add_argument('--dataset-revision', required=True, help='Source dataset Git commit')
     parser.add_argument('--output', required=True)
-    parser.add_argument('--mode', required=True, choices=('mock','live'))
+    parser.add_argument('--mode', required=True, choices=('mock','live','local'))
     parser.add_argument('--mock-responses')
     parser.add_argument('--limit', type=int, help='First N extraction turns; incomplete smoke run')
     args = parser.parse_args(argv)
@@ -67,7 +68,7 @@ def main(argv=None):
                 raise ValueError('Not enough mock responses for selected turns.')
             runtime = MockRuntime(responses)
         else:
-            runtime = DeepInfraRuntime()
+            runtime = OllamaRuntime() if args.mode == 'local' else DeepInfraRuntime()
         manifest = {'schema_version': 1, 'dataset_revision': args.dataset_revision,
             'input': source, 'clean_stream': clean_source, 'mock_responses': mock_source,
             'code': _code_identity(), 'dataset_mode': args.dataset_mode, 'mode': args.mode,

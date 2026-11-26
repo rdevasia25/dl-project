@@ -6,6 +6,7 @@ from itertools import islice
 import sys
 from .core import extract_turn, validate_request
 from .runtime import DeepInfraRuntime, MockRuntime
+from .ollama_runtime import OllamaRuntime
 from .types import ExtractionRequest, ExtractionStatus
 
 
@@ -47,7 +48,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', required=True, help='Input JSONL file')
     parser.add_argument('--output', required=True, help='New output JSONL file (never overwritten)')
-    parser.add_argument('--mode', required=True, choices=('mock', 'live'))
+    parser.add_argument('--mode', required=True, choices=('mock', 'live', 'local'))
     parser.add_argument('--mock-responses', help='JSONL file of raw response strings, one per call')
     parser.add_argument('--limit', type=int, help='Maximum user messages')
     args = parser.parse_args(argv)
@@ -65,7 +66,7 @@ def main(argv=None):
                     raise ValueError('Mock responses must be JSON strings.')
                 runtime = MockRuntime(responses)
             else:
-                runtime = DeepInfraRuntime()
+                runtime = OllamaRuntime() if args.mode == 'local' else DeepInfraRuntime()
             # Open exclusively before any inference, protecting input and existing results.
             target = stack.enter_context(open(args.output, 'x', encoding='utf-8'))
             for result in run_records(read_jsonl(source), runtime, limit=args.limit):
