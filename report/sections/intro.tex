@@ -1,3 +1,41 @@
 \section{Introduction}
 \label{sec:intro}
-% TODO (owner: ): the problem and the base paper (milestone items a, b).
+% Milestone item b. Owner: Rahul Devasia (rd668).
+
+Long-running conversations with an LLM assistant often contain instructions
+that should remain applicable beyond the next response. For example, a user
+might require approval before an email is sent or ask the assistant to use
+metric units throughout the session. These persistent instructions govern how
+later requests should be handled, even when those requests concern different
+tasks. When conversation history grows too long, a system may replace it with
+a shorter summary. A summary can preserve the current task while omitting an
+earlier instruction, leaving the assistant without a requirement the user still
+expects it to follow.
+
+Our investigation builds on \emph{Lost in Context Compaction: When LLM Systems
+Drop Side Constraints} by Wang et al.~\cite{wang2026compaction}. The paper
+studies these persistent user instructions as side constraints and investigates
+their loss during context compaction. Its proposed extractor processes user
+turns and stores detected constraints in a registry separate from the
+conversation summary. The registry is then appended to the compacted context,
+so the summary is no longer the sole place where those constraints are
+preserved. We use the authors' public implementation as the basis for our
+always-on extraction baseline~\cite{compactionintegrity}.
+
+The problem we investigate is the overhead of deciding whether each new user
+message adds a persistent constraint. The paper's baseline invokes an LLM
+extractor on every user turn, including ordinary questions and instructions
+that apply only to the current answer. We ask whether a lightweight Jev
+decision gate can identify turns that warrant extraction and skip the
+remaining extractor calls while preserving the constraints captured by the
+always-on baseline.
+
+Our comparison keeps the extraction model, prompt, and append-only registry
+procedure the same in both systems; the intended change is whether the gate
+invokes that shared extractor. Selective invocation introduces a tradeoff:
+skipping an ordinary message avoids extraction work, but skipping a genuine
+constraint may leave it absent from the registry. The gate also adds its own
+processing cost. We therefore investigate whether the reduction in extractor
+calls is sufficient to improve overall efficiency without materially reducing
+constraint preservation, rather than assuming that fewer calls necessarily
+produce a better system.
