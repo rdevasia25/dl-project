@@ -71,4 +71,11 @@ S=1-\frac{K}{N}.
 \end{equation}
 We also track total cost and latency per turn; Section~\ref{sec:cost} gives the cost model. These efficiency results are reported on the stream set because its natural constraint rate is closer to real traffic. Injected stream results are kept separate.
 
-For the final report, we also plan to measure retention with an LLM judge and compliance with the paper's A/B probes~\cite{wang2026compaction}. These test whether a constraint stays in the compacted context and whether the assistant still follows it. We choose $\tau$ using validation only, report precision, recall, and recall by category on test, and report calls saved, cost, and latency on the stream.
+For the baseline's individual message checks, a turn counts as positive
+when Qwen extracts at least one constraint. We compare these predictions
+with the released persistent-constraint labels and calculate precision, recall,
+and F1 for each split. For the short-chat baseline, retention measures
+whether the target rule appears in the final registry. Compliance measures
+whether Qwen follows that rule when answering a follow-up question with the
+final registry available. We score each reply against a criterion fixed
+before the run. We choose $\tau$ using validation only, report precision, recall, and recall by category on test, and report calls saved, cost, and latency on the stream.
