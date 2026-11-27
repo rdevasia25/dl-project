@@ -17,9 +17,9 @@ No paid inference has been authorized or run from this baseline checkout.
 
 ## Implemented
 
-- sc_baseline/dataset.py maps released rows into the existing shared extractor.
+- The dataset adapter in sc_baseline.py maps released rows into the existing shared extractor.
   Only observed text/IDs/turn positions enter requests and state handling.
-- sc_baseline/dataset_runner.py provides explicit examples, stream and injections
+- The dataset CLI in sc_baseline.py provides explicit examples, stream and injections
   modes with mock/live runtime options, source-linked results and manifests.
 - Example mode resets state per sample, even when source conversation IDs repeat.
 - Stream mode processes every row in order, separately per conversation, without
@@ -178,11 +178,13 @@ cd "$BASELINE_SRC"
 git status --short --branch
 "$BASELINE_PY" -m unittest discover -s tests
 curl -fsS http://127.0.0.1:11439/api/version
-"$BASELINE_PY" -c 'from sc_baseline.ollama_runtime import OllamaRuntime; print(OllamaRuntime().config_id)'
+"$BASELINE_PY" -c 'from sc_common import OllamaRuntime; print(OllamaRuntime().config_id)'
 ```
 
-Expect feature/baseline, 52 passing tests on the verified version, Ollama 0.40.18
-and config ID `5250541c50c0cfc41bb7c5338e4e70b101b6aa2c9ef39eebd21d54dc4fe02adc`.
+Expect 52 passing tests and Ollama 0.40.18. The runtime also checks the pinned
+model digest. Save the reported config ID with the run. The two-file refactor
+changed code fingerprints, so compare settings and model digest against the
+recorded class run while keeping that run’s original fingerprints.
 A different checkout path is fine if these checks and the input hashes match.
 If the server is stopped, use the project-local startup command in README
 from BASELINE_ROOT. The CLI and model are already in the original runs directory.
@@ -237,7 +239,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from sc_baseline.ollama_runtime import OllamaRuntime
+from sc_common import OllamaRuntime
 
 data = Path("dataset/data/final")
 revision = "6cae2dd5d43f3f2a074f8f54ce7719785da78aa3"
@@ -263,7 +265,6 @@ cases = {
     "022:sc15": "Give me two ways to remember someone's name.",
 }
 runtime = OllamaRuntime()
-assert runtime.config_id == "5250541c50c0cfc41bb7c5338e4e70b101b6aa2c9ef39eebd21d54dc4fe02adc"
 stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 out = Path(os.environ["BASELINE_ROOT"]) / "runs" / ("class-baseline-" + stamp)
 out.mkdir()
@@ -290,7 +291,7 @@ deadline = time.monotonic() + 7200
 
 def batch(stem, source, mode, count, extra=()):
     target = out / (stem + "-results.jsonl")
-    command = [sys.executable, "-m", "sc_baseline.dataset_runner", "--mode", "local",
+    command = [sys.executable, "-m", "sc_baseline", "dataset", "--mode", "local",
                "--dataset-mode", mode, "--dataset-revision", revision, "--input", str(source),
                "--output", str(target), *extra]
     subprocess.run(command, check=True, timeout=max(0, deadline - time.monotonic()))

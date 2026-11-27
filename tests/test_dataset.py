@@ -7,10 +7,10 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from sc_baseline.dataset import prepare_turns, run_turns
-from sc_baseline.dataset_runner import main
-from sc_baseline.runner import read_jsonl
-from sc_baseline.runtime import MockRuntime, RuntimeFailure
+from sc_baseline import prepare_turns, run_turns
+from sc_baseline import dataset_main as main
+from sc_baseline import read_jsonl
+from sc_common import MockRuntime, RuntimeFailure
 from sc_baseline import ModelResponse
 
 
@@ -169,7 +169,7 @@ class CLITests(unittest.TestCase):
 
     def test_invalid_later_row_preflight_zero_generation(self):
         self.source.write_text(json.dumps(row())+'\n{}\n')
-        with patch('sc_baseline.dataset_runner.MockRuntime') as runtime:
+        with patch('sc_baseline.MockRuntime') as runtime:
             self.assertEqual(main(self.args()),2)
             runtime.assert_not_called()
         self.assertFalse(self.output.exists())
@@ -181,7 +181,7 @@ class CLITests(unittest.TestCase):
 
     def test_manifest_overwrite_no_inference(self):
         manifest=Path(str(self.output)+'.manifest.json');manifest.write_text('keep')
-        with patch('sc_baseline.dataset_runner.run_turns') as run:
+        with patch('sc_baseline.run_turns') as run:
             self.assertEqual(main(self.args()),2);run.assert_not_called()
         self.assertEqual(manifest.read_text(),'keep')
 
@@ -208,7 +208,7 @@ class CLITests(unittest.TestCase):
 
     def test_known_cost_total(self):
         rt=MockRuntime([ModelResponse(raw(),'scripted-mock',{'prompt_tokens':1},0.01,'test')])
-        with patch('sc_baseline.dataset_runner.MockRuntime',return_value=rt):
+        with patch('sc_baseline.MockRuntime',return_value=rt):
             self.assertEqual(main(self.args()),0)
         self.assertEqual(self.manifest()['total_cost_usd'],0.01)
 

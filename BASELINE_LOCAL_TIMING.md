@@ -51,7 +51,7 @@ second per turn adds roughly nine hours to the full injected replay.
   6,056,386,231 bytes of model allocation in GPU memory.
 - Temperature 0, top-p 1, maximum output 4,096 tokens, thinking disabled,
   truncation and context shifting disabled. Sampling settings and full digest
-  are checked or specified by `sc_baseline.ollama_runtime`. The model started
+  are checked or specified by the then-current `sc_baseline.ollama_runtime` (now in `sc_common.py`). The model started
   unloaded. The same server handled all six sequential calls.
 - Dataset revision `6cae2dd5d43f3f2a074f8f54ce7719785da78aa3`.
   Validation SHA-256 `2fd44af8e328bf25b45d156774d8d82cbc28cb7ba0bbc3a3d9b528fae7722953`.

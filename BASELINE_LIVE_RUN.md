@@ -61,7 +61,7 @@ empty registries contain 15,014. The resulting estimate is $0.1320559 before
 rounding. This is not a tokenizer measurement or guaranteed upper bound. Taxes,
 account top-up minimums, extra attempts, or provider changes are not included.
 
-Model and settings are fixed in `sc_baseline/runtime.py`: `Qwen/Qwen3.5-9B`,
+Model and settings are fixed in `sc_common.py`: `Qwen/Qwen3.5-9B`,
 temperature 0, top-p 1, max_tokens 4096, n 1, no streaming,
 `chat_template_kwargs={"enable_thinking": false}`, and `reasoning_effort="none"`.
 The last setting was added explicitly during live preparation, following the
@@ -123,7 +123,7 @@ Only after the smoke checks pass and the approved budget covers the remaining
 calls, run in the same shell (or restore the existing `pilot_dir` value):
 
 ```bash
-.venv/bin/python -m sc_baseline.dataset_runner \
+.venv/bin/python -m sc_baseline dataset \
   --input dataset/data/final/val.jsonl --dataset-mode examples \
   --dataset-revision b8f354433344281602e851916ce3b3cb114be607 \
   --mode live --output "$pilot_dir/validation.jsonl"

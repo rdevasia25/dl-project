@@ -2,7 +2,7 @@
 
 Cornell Tech CS 5787 project: compare constraint extraction on every user
 message with Jev-gated calls to the same extractor. The baseline component lives
-in `sc_baseline/`. Data preparation, Jev, and shared research evaluation belong
+in `sc_baseline.py`, with shared extraction and runtimes in `sc_common.py`. Data preparation, Jev, and shared research evaluation belong
 to separate workstreams.
 
 ## Current implementation status
@@ -235,7 +235,7 @@ Jev can import the exact baseline entrypoint without using the CLI:
 
 ```python
 from sc_baseline import ExtractionRequest, extract_turn
-from sc_baseline.runtime import DeepInfraRuntime, MockRuntime
+from sc_common import DeepInfraRuntime, MockRuntime
 
 runtime = MockRuntime(['{"scs": []}'])  # DeepInfraRuntime() after live approval
 registry = []
@@ -281,7 +281,7 @@ For a tiny mock check, create three scripted empty outputs under ignored runs/:
 ```bash
 mkdir -p runs
 .venv/bin/python -c 'import json; print((json.dumps(json.dumps({"scs": []}))+"\n")*3, end="")' > runs/empty-responses.jsonl
-.venv/bin/python -m sc_baseline.dataset_runner \
+.venv/bin/python -m sc_baseline dataset \
   --input dataset/data/final/val.jsonl --dataset-mode examples \
   --dataset-revision f8a3ffc5c4bb6ab68eb71bb4bb79ea38855cc132 \
   --mode mock --mock-responses runs/empty-responses.jsonl --limit 3 \
@@ -341,7 +341,7 @@ components and the final research evaluation remain outside baseline ownership.
 
 The local backend uses Ollama 0.40.18 and `qwen3.5:9b-q4_K_M`. Both runners
 accept `--mode local`, and Jev can pass an instance of
-`sc_baseline.ollama_runtime.OllamaRuntime` to the shared `extract_turn`.
+`sc_common.OllamaRuntime` to the shared `extract_turn`.
 The adapter checks the installed server version and exact model digest before
 generation. It connects to 127.0.0.1:11439, disables thinking, prompt truncation
 and context shifting, and requests a 16,384-token context and 4,096-token output

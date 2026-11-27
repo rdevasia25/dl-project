@@ -10,10 +10,10 @@ from urllib.error import HTTPError, URLError
 from unittest.mock import patch
 
 from sc_baseline import *
-from sc_baseline.parsing import parse_extractor_output, parse_with_errors
-from sc_baseline.prompts import build_sc_extraction_prompts
-from sc_baseline.runner import run_records
-from sc_baseline.runtime import DeepInfraRuntime, MockRuntime, RuntimeFailure, MODEL, SETTINGS
+from sc_common import parse_extractor_output, parse_with_errors
+from sc_common import build_sc_extraction_prompts
+from sc_baseline import run_records
+from sc_common import DeepInfraRuntime, MockRuntime, RuntimeFailure, MODEL, SETTINGS
 
 FIXTURES = Path(__file__).parent / 'fixtures'
 
@@ -264,7 +264,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(len(list(run_records(records(), MockRuntime([raw()]), limit=1))), 1)
 
     def test_redirects_disabled(self):
-        from sc_baseline.runtime import _NoRedirect
+        from sc_common import _NoRedirect
         self.assertIsNone(_NoRedirect().redirect_request(None, None, 302, '', {}, 'https://example.com'))
 
     def test_error_stops(self):

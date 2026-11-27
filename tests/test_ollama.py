@@ -2,8 +2,8 @@ import io
 import json
 import unittest
 
-from sc_baseline.ollama_runtime import DIGEST, MODEL, VERSION, OllamaRuntime
-from sc_baseline.runtime import RuntimeFailure
+from sc_common import DIGEST, OLLAMA_MODEL as MODEL, VERSION, OllamaRuntime
+from sc_common import RuntimeFailure
 
 
 class FakeOllama:
