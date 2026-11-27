@@ -3,29 +3,83 @@
 
 \subsection{Baseline}
 \label{sec:baseline-results}
-Table~\ref{tab:baseline-retention} presents preliminary registry-retention
-results from our team's Qwen3.5-9B baseline runs. Retention measures whether
-a target side constraint is present in the final registry.
+% Verified run summary and artifact provenance: BASELINE_CLASS_RESULTS.md.
+We checked 100 validation messages and 200 test messages independently,
+starting each with an empty registry. As shown in
+Table~\ref{tab:baseline-detection}, precision exceeded 90\% on both splits.
+On the test split, Qwen detected 39 of the 83 labeled positive messages
+and missed 44. The validation split had 20 true positives, one false
+positive, eight false negatives, and 71 true negatives. The test split also had three false positives and 114 true negatives.
 
-\begin{table}[htbp]
+\begin{table}[t]
   \centering
-  \caption{Preliminary Qwen3.5-9B baseline registry-retention results
-  from our experiments.}
-  \label{tab:baseline-retention}
-  \begin{tabular}{lr}
+  \small
+  \caption{Baseline rule detection by split. Precision, recall, F1, and
+  accuracy are percentages.}
+  \label{tab:baseline-detection}
+  \begin{tabular}{@{}lrrrrr@{}}
     \toprule
-    Dataset & Retention (\%) \\
+    Split & Scored & Precision & Recall & F1 & Accuracy \\
     \midrule
-    WildChat & 90.3 \\
-    Hermes & 93.7 \\
-    swe-natural & 95.1 \\
+    Val. & 100/100 & 95.24 & 71.43 & 81.63 & 91.00 \\
+    Test & 200/200 & 92.86 & 46.99 & 62.40 & 76.50 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Our baseline implements the same per-user-turn extraction and append-only
-registry procedure. All 49 offline software tests pass, and small dataset runs
-with scripted model responses complete successfully.
+We also replayed six preselected WildChat prefixes of 16 user turns each.
+Qwen retained the injected rule in all six final registries. Given the final
+registry and a follow-up question, it followed the rule in four of six
+replies (66.67\%). In the two misses, Qwen skipped restating the question and
+included imperial conversions despite a metric-only rule, respectively.
+These results describe the six selected chats.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Final registry retention and follow-up compliance for the six
+  short WildChat cases.}
+  \label{tab:baseline-retention}
+  \begin{tabular}{@{}lcc@{}}
+    \toprule
+    Case ID suffix & Retained & Followed \\
+    \midrule
+    000:sc03 & Yes & Yes \\
+    001:sc08 & Yes & Yes \\
+    007:sc09 & Yes & No \\
+    008:sc11 & Yes & No \\
+    015:sc14 & Yes & Yes \\
+    022:sc15 & Yes & Yes \\
+    \midrule
+    Total & 6/6 & 4/6 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The local run completed 396 extraction calls and six follow-up generations
+in approximately 23 minutes and 19 seconds, with zero recorded inference
+errors and \$0 in provider fees. Table~\ref{tab:baseline-latency} shows the
+latency per request. As expected for the always-on baseline, it saved zero
+extraction calls. Ollama reported 661,923 prompt tokens and 6,368 generated
+tokens for extraction, plus 414 prompt tokens and 455 generated tokens for
+follow-up replies.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Local baseline latency in seconds per request.}
+  \label{tab:baseline-latency}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Group & Calls & Mean & Median & P95 \\
+    \midrule
+    Validation extraction & 100 & 2.981 & 2.310 & 8.510 \\
+    Test extraction & 200 & 3.716 & 3.042 & 7.859 \\
+    Chat extraction & 96 & 3.439 & 3.258 & 7.306 \\
+    Follow-up generation & 6 & 4.168 & 3.323 & 10.261 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsection{Jev gate}
 \label{sec:jev-results}
