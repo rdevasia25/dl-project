@@ -8,8 +8,11 @@ The only change is that Jev decides which turns reach the extractor.
 
 - **Done:** `jev_scores.jsonl`, with all 396 inputs scored once by `typesafe/jev-1.14-20261014`. Total Jev cost $0.0145, mean latency 0.84 s.
   One request timed out after 60 s and was retried on resume; it may have been billed, but at about $0.00003 it's negligible.
-- **Pending:** the `gated_*.jsonl` files and `summary.json`. These need Rahul's run folder, which is only on his Mac.
-  Once it's in `runs/`, run `python experiments/gated_replay.py --baseline_run runs/class-baseline-20261126T203101Z`.
+- **Done:** the `gated_*.jsonl` files and `summary.json`, made with Rahul's run folder (sent directly, kept out of git under `runs/`).
+  To rebuild them: `python experiments/gated_replay.py --baseline_run runs/class-baseline-20261126T203101Z`.
+  Every check passed: the IDs and order match his rows, all 396 rows were successful, and the chat turns match his `cases.jsonl`.
+  His baseline tables come out identical (val TP/FP/FN/TN 20/1/8/71, test 39/3/44/114).
+- **All 6 chats replay exactly** at threshold 0.05, so none needs a Qwen rerun. Jev passed every turn that added a constraint.
 - **Consistency with the report:** at threshold 0.05, val recall is 1.00 with 35 false positives (report: 33), and test recall is 0.98 with 65 (report: 67).
   Test AUROC is 0.946 (report: 0.949). This is gate-vs-label only; the baseline comparison needs the replay.
 
