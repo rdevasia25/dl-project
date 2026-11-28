@@ -4,6 +4,15 @@ The Jev-gated version of Rahul's class baseline run ([BASELINE_CLASS_RESULTS.md]
 the same 100 val + 200 test messages, the same 6 chats of 16 turns each, the same Qwen outputs and follow-up answers.
 The only change is that Jev decides which turns reach the extractor.
 
+## Status (2026-11-27)
+
+- **Done:** `jev_scores.jsonl`, with all 396 inputs scored once by `typesafe/jev-1.14-20261014`. Total Jev cost $0.0145, mean latency 0.84 s.
+  One request timed out after 60 s and was retried on resume; it may have been billed, but at about $0.00003 it's negligible.
+- **Pending:** the `gated_*.jsonl` files and `summary.json`. These need Rahul's run folder, which is only on his Mac.
+  Once it's in `runs/`, run `python experiments/gated_replay.py --baseline_run runs/class-baseline-20261126T203101Z`.
+- **Consistency with the report:** at threshold 0.05, val recall is 1.00 with 35 false positives (report: 33), and test recall is 0.98 with 65 (report: 67).
+  Test AUROC is 0.946 (report: 0.949). This is gate-vs-label only; the baseline comparison needs the replay.
+
 ## How it was made
 
 1. `experiments/score_class_inputs.py` asked Jev about each of the 396 extractor inputs once, using gate variant A
